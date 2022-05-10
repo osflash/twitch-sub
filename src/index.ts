@@ -28,8 +28,9 @@ creator
 client.on("ready", async () => {
   console.log(`Logged in as ${client.user!.tag}!`);
 
-  channels.forEach(async (channelID) => {
-    const instagramChannel = client.channels.cache.get(channelID!);
+  for (const [guildID, channelID] of channels) {
+    const users = new Set<string>();
+    const instagramChannel = client.channels.cache.get(channelID);
 
     if (instagramChannel?.isText()) {
       await instagramChannel.messages.fetch();
@@ -38,11 +39,13 @@ client.on("ready", async () => {
         if (msg.embeds && msg.embeds[0].title) {
           const user = msg.embeds[0].footer?.text;
 
-          instagramUsers.add(user!);
+          users.add(user!);
         }
       });
+
+      instagramUsers.set(guildID, users);
     }
-  });
+  }
 });
 
 client.login(process.env.DISCORD_BOT_TOKEN);

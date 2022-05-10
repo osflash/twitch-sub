@@ -3,7 +3,7 @@ export const channels = new Map<string, string>([
   ["797288128461275136", "973498152617410630"],
 ]);
 
-export const instagramUsers = new Set<string>();
+export const instagramUsers = new Map<string, Set<string>>();
 
 const config = {
   channels,

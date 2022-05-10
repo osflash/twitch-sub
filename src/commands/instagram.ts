@@ -14,7 +14,6 @@ export default class SubCommand extends SlashCommand {
     super(creator, {
       name: "instagram",
       description: "Vincule seu instagram com o discord.",
-      guildIDs: "734623227808317531",
       options: [
         {
           type: CommandOptionType.STRING,
@@ -45,7 +44,13 @@ export default class SubCommand extends SlashCommand {
 
     const instagramChannel = guild.channels.cache.get(channelID);
 
-    if (!instagramUsers.has(id)) {
+    let users = instagramUsers.get(ctx.guildID!);
+
+    if (!users) {
+      users = new Set<string>();
+    }
+
+    if (!users.has(id)) {
       if (instagramChannel?.isText()) {
         const embed = new MessageEmbed()
           .setColor("RED")
@@ -57,6 +62,10 @@ export default class SubCommand extends SlashCommand {
           .setTimestamp();
 
         await instagramChannel.send({ embeds: [embed] });
+
+        users.add(id);
+
+        instagramUsers.set(ctx.guildID!, users);
       }
 
       await ctx.send("Seu pedido para o Close Friends foi enviado!", {
