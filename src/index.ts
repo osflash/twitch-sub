@@ -3,8 +3,19 @@ import dotenv from "dotenv";
 import { Client, Intents } from "discord.js";
 import InstagramCommand from "./commands/instagram";
 import { channels, instagramUsers } from "./config";
+import express from "express";
 
 dotenv.config();
+
+const app = express();
+
+app.get("/", (req, res) => {
+  console.log("Ready!");
+
+  res.status(200).json({});
+});
+
+app.listen(process.env.PORT);
 
 const client = new Client<true>({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
