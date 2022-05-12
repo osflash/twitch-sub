@@ -33,7 +33,7 @@ const exit = async () => {
   client.destroy();
   server.close();
 
-  process.exit();
+  process.exit(1);
 };
 
 /**
