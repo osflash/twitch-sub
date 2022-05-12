@@ -1,62 +1,47 @@
-import { GatewayServer, SlashCreator } from "slash-create";
-import dotenv from "dotenv";
-import { Client, Intents } from "discord.js";
+import "dotenv/config";
+
+import app from "./app";
+import client from "./sevices/discord.js";
+
 import InstagramCommand from "./commands/instagram";
-import { channels, instagramUsers } from "./config";
-import express from "express";
+import creator from "./sevices/slash-create";
+import { GatewayServer } from "slash-create";
 
-dotenv.config();
+const server = app.listen(process.env.PORT || 3000, async () => {
+  try {
+    creator
+      .withServer(
+        new GatewayServer((handler) =>
+          client.ws.on("INTERACTION_CREATE", handler)
+        )
+      )
+      .registerCommand(InstagramCommand)
+      .syncCommands();
 
-const app = express();
+    // events
+    await import("./sevices/discord.js/events");
 
-app.get("/", (req, res) => {
-  console.log("Ready!");
-
-  res.status(200).json({});
-});
-
-app.listen(process.env.PORT);
-
-const client = new Client<true>({
-  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
-  partials: ["MESSAGE", "CHANNEL"],
-});
-
-const creator = new SlashCreator({
-  applicationID: process.env.DISCORD_APP_ID as string,
-  publicKey: process.env.DISCORD_PUBLIC_KEY,
-  token: process.env.DISCORD_BOT_TOKEN,
-  client,
-});
-
-creator
-  .withServer(
-    new GatewayServer((handler) => client.ws.on("INTERACTION_CREATE", handler))
-  )
-  .registerCommand(InstagramCommand)
-  .syncCommands();
-
-client.on("ready", async () => {
-  console.log(`Logged in as ${client.user!.tag}!`);
-
-  for (const [guildID, channelID] of channels) {
-    const users = new Set<string>();
-    const instagramChannel = client.channels.cache.get(channelID);
-
-    if (instagramChannel?.isText()) {
-      await instagramChannel.messages.fetch();
-
-      instagramChannel.messages.cache.forEach((msg) => {
-        if (msg.embeds && msg.embeds[0].title) {
-          const user = msg.embeds[0].footer?.text;
-
-          users.add(user!);
-        }
-      });
-
-      instagramUsers.set(guildID, users);
-    }
+    await client.login(process.env.DISCORD_BOT_TOKEN);
+  } catch (err) {
+    console.error(err);
   }
 });
 
-client.login(process.env.DISCORD_BOT_TOKEN);
+const exit = async () => {
+  console.info("Closing");
+
+  client.destroy();
+  server.close();
+
+  process.exit();
+};
+
+/**
+ * Redirects process exiting to custom exit function.
+ */
+process.on("SIGHUP", exit);
+process.on("SIGQUIT", exit);
+process.on("SIGTERM", exit);
+process.on("SIGINT", exit);
+
+if (process.platform === "win32") process.on("SIGKILL", exit);
